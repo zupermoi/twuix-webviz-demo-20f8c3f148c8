@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head id="Head1"><title>
+	Open Inventor Http Viewer
+</title><meta name="viewport" content="user-scalable=no,width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black" /><meta http-equiv="CACHE-CONTROL" content="NO-CACHE" /><meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<link rel="stylesheet" href="jquery/jquery.mobile-1.3.0.min.css" />
+<script type="text/javascript" src="jquery/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="jquery/jquery.mobile-1.3.1.min.js"></script>
+
+<script type="text/javascript">
+
+    var viewerFull = null;
+	
+	//@listModel
+	var items = [["CAD","carchassis.iv"],["CAD","drill.iv"],["CAD","engine1.iv"],["CAD","engine2.iv"],["CAD","fdt.iv"],["CAD","finaleEtoile_NoShadow_bin.iv"],["CAD","gokart.iv"],["CAD","landingGear.iv"],["CAD","manualdrill.iv"],["CAD","modelcar.iv"],["CAD","motor.am"],["CAD","piston.iv"],["CAD","Pump-bracket-Machined.iv"],["CAD","rccar.iv"],["CAD","reciprocatingsaw.iv"],["CAD","saw2.iv"],["Medical","iPad_foot.iv"],["Medical","iPad_Spine.iv"],["Medical","iPad_Women_RSNA_2012_4.iv"],["Oil&Gas","CGG_IPad_Shadows.iv"],["Oil&Gas","CGG_IPad_Shadows2.iv"],["Oil&Gas","CGG_IPad_Shadows3.iv"],["Oil&Gas","GCC_25GB.iv"],["Oil&Gas","horizons"],["Oil&Gas","IvTuneViewer9.2.2.bat"],["Oil&Gas","LDM"],["Oil&Gas","logo"],["Sources","data_v1.am"],["Sources","data_v2.am"],["Sources","LDM"],["Sources","moteurEtoile_Shaded-files"],["Sources","redColorMap.png"],["Sources","WomenHTML5.dat"],["Sources","WomenHTML5.lda"]];
+
+	
+    window.addEventListener('resize', updateOrientation);
+    
+    window.onload = function () {
+		
+		$("#selectmarket").change(function(){changeMarket();});
+		$("#select-session").change(function(){changeViewer();});
+		$("#selectviewer").change(function(){changeModel();});
+		$("#checkbox-1").change(function(){changePick();});
+		$("#checkbox-2").change(function(){directViz();});
+		
+		$(".trigger").click(function(){
+			$(".panel").toggle("fast");
+			$(".trigger").hide();
+			return false;
+		});
+		
+		$(".trigger-r").click(function(){
+			$(".panel").toggle("fast");
+			$(".trigger").show();
+			return false;
+		});
+		
+		changeMarket();
+		var select = document.getElementById("selectviewer");
+		select.options[0].selected = true; 
+		
+        
+		$("#checkbox-2").prop('checked',true);
+		$('#checkbox-2').prop('refresh', true);
+		
+		changeViewer();
+		
+    };
+	
+	function messageReceive(message){
+		var elem = message.split(' ');
+		if (elem[0] == "directviz"){
+			if (elem[1] == "on"){
+				$("#checkbox-img-2").attr('src','Images/nodirectviz.png');
+				$("#checkbox-2").attr('checked',true).checkboxradio("refresh");
+			}else{
+				$("#checkbox-img-2").attr('src','Images/directviz.png');
+				$("#checkbox-2").attr('checked',false).checkboxradio("refresh");
+			}
+		}else if (elem[0] == "pick"){
+			if (elem[1] == "on"){
+				$("#checkbox-img").attr('src','Images/hand.png');
+				$("#checkbox-1").attr('checked',true).checkboxradio("refresh");
+			}
+			else{
+				$("#checkbox-img").attr('src','Images/pointer.png');
+				$("#checkbox-1").attr('checked',false).checkboxradio("refresh");
+			}
+		}else if (elem[0] == "clients"){
+			$("#clients").html(elem[1] + " connected client(s)");
+		}else if (elem[0] == "open"){
+			var file = elem[1].split('/');
+			$("#selectmarket").val(file[0]);
+			$("#selectviewer").val(elem[1]);
+
+			$('#selectviewer').selectmenu('refresh', true);
+			$('#selectmarket').selectmenu('refresh', true);
+
+		}
+		
+	}
+	
+	function changeViewer(){
+
+	  //var viewer = document.getElementById('viewerinput').value;
+	  
+	  var viewer = document.getElementById('select-session').options[document.getElementById('select-session').selectedIndex].value;
+	  
+      var w = document.body.offsetWidth;
+      var h =  document.body.offsetHeight;
+      
+      if (w==0 || h==0)
+        return null;
+    
+	  if (viewerFull == null){
+		  viewerFull = new OivCanvasRenderArea("canvas", "ws://93.20.180.220:80/OIVRenderService"/**@ipServer*/,"1" + viewer, w, h);
+		  viewerFull.addMessageListener(messageReceive);
+	  }else
+	      viewerFull.setViewer(viewer);
+		
+	}
+
+    function updateOrientation() {
+	  var viewer = document.getElementById('viewerinput').value;
+	  
+      var w = document.body.offsetWidth;
+      var h =  document.body.offsetHeight;
+      
+      if (w==0 || h==0)
+        return null;
+      
+       if (viewerFull != null) {
+          viewerFull.resize(w, h);
+       }
+	   
+    }
+	
+	function changePick(){
+		if ($("#checkbox-1").is(':checked')) {
+			viewerFull.command("pick on");
+			$("#checkbox-img").attr('src','Images/hand.png');
+		} else {
+			viewerFull.command("pick off");
+			$("#checkbox-img").attr('src','Images/pointer.png');
+		}
+    }
+	
+	function directViz(){
+		if ($("#checkbox-2").is(':checked')) {
+			viewerFull.command("directviz on");
+			$("#checkbox-img-2").attr('src','Images/nodirectviz.png');
+		} else {
+			viewerFull.command("directviz off");
+			$("#checkbox-img-2").attr('src','Images/directviz.png');
+		}
+    }
+    
+    function changeModel(){
+		var file = document.getElementById("selectviewer").value;
+		if (file != "")
+			viewerFull.command("open " + file);     
+    }
+	
+	function changeMarket(){
+		var select = document.getElementById("selectviewer");
+		select.options.length = 0;
+		for(index in items) {
+			if (items[index][0] == document.getElementById('selectmarket').value){
+				select.options[select.options.length] = new Option(items[index][1], items[index][0] + '/' + items[index][1],false,false);
+			}
+		}
+		select.selectedIndex = -1;
+	}
+	
+  </script>
+  <link rel="apple-touch-icon" href="Images/OIV_ios_icone.png" /><link rel="stylesheet" type="text/css" href="StyleSheet.css" />
+  <!--
+    <link rel="apple-touch-startup-image" href="startup.png" /><link rel="stylesheet" href="tetris.css" type="text/css" media="screen, mobile" title="main" charset="utf-8" />
+-->
+  <!-- <script type="text/javascript" src="jquery.js"></script>  -->
+  <script type="text/javascript" src="OpenInventor.js"></script>
+</head>
+<body onorientationchange="updateOrientation()">
+	<div data-role="page" class="type-interior">
+		<div id="container">
+			<canvas id="canvas" class="full">
+				Your browser does not support the canvas element.
+			</canvas>
+		
+		<div class="panel">
+			<h3>Open Inventor</h3>
+			
+			<div class="menu-left">
+				<select name="select-session" id="select-session">
+					<option value="session1">Session 1</option>
+					<option value="session2">Session 2</option>
+					<option value="session3">Session 3</option>
+				</select>
+				<p id="clients"></p>
+			</div>
+			<div style="clear:both;"></div>
+			<div class="menu-left">
+				<fieldset data-role="controlgroup" data-type="horizontal">
+					<input type="checkbox" name="checkbox-1" id="checkbox-1" class="custom" />
+					<label for="checkbox-1"><img src="Images/pointer.png" id="checkbox-img" /></label>
+					
+					<!--<input type="checkbox" name="checkbox-2" id="checkbox-2" class="custom" />
+					<label for="checkbox-2"><img src="Images/directviz.png" id="checkbox-img-2" /></label>-->
+
+					<select name="selectmarket" id="selectmarket">
+						<!--@listDirectory-->
+						<option class="radio-choice" data-icon="false" value="CAD">CAD</option>
+						<option class="radio-choice" data-icon="false" value="Medical">Medical</option>
+						<option class="radio-choice" data-icon="false" value="Oil&Gas">Oil&Gas</option>
+						<option class="radio-choice" data-icon="false" value="Sources">Sources</option>
+					</select>
+
+					<select name="selectviewer" id="selectviewer">
+						<!--@firstModel-->
+						<option value="CAD/carchassis.iv">carchassis.iv</option>
+						<option value="CAD/drill.iv">drill.iv</option>
+						<option value="CAD/engine1.iv">engine1.iv</option>
+						<option value="CAD/engine2.iv">engine2.iv</option>
+						<option value="CAD/fdt.iv">fdt.iv</option>
+						<option value="CAD/finaleEtoile_NoShadow_bin.iv">finaleEtoile_NoShadow_bin.iv</option>
+						<option value="CAD/gokart.iv">gokart.iv</option>
+						<option value="CAD/landingGear.iv">landingGear.iv</option>
+						<option value="CAD/manualdrill.iv">manualdrill.iv</option>
+						<option value="CAD/modelcar.iv">modelcar.iv</option>
+						<option value="CAD/motor.am">motor.am</option>
+						<option value="CAD/piston.iv">piston.iv</option>
+						<option value="CAD/Pump-bracket-Machined.iv">Pump-bracket-Machined.iv</option>
+						<option value="CAD/rccar.iv">rccar.iv</option>
+						<option value="CAD/reciprocatingsaw.iv">reciprocatingsaw.iv</option>
+						<option value="CAD/saw2.iv">saw2.iv</option>
+					</select>
+				</fieldset>
+			</div>
+			
+			<div style="clear:both;"></div>
+			<a class="trigger-r" href="#"></a>
+		</div>
+		</div>
+		<a class="trigger" href="#"></a>
+		<div>
+			<p id="debugString"></p>
+		</div>
+		<div>
+			
+		</div>
+	</div>
+</body>
+</html>
